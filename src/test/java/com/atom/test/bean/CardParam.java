@@ -40,22 +40,6 @@ public class CardParam {
      * 还比率
      */
     private BigDecimal refundRate;
-    /**
-     * 预判次数
-     */
-//    private BigDecimal preCount;
-    /**
-     * 余数
-     */
-//    private Integer remainder;
-    /**
-     * 预判计数器
-     */
-//    private Integer preCounter = 0;
-    /**
-     * 余数计数器
-     */
-//    private Integer remainderCounter = 0;
 
     public BigDecimal getRefundRate() {
         return refundAmount.divide(refundBase, 2, BigDecimal.ROUND_HALF_UP);
