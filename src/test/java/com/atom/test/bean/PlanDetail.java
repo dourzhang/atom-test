@@ -50,6 +50,6 @@ public class PlanDetail {
                 ", 还款 deposit=" + deposit +
                 ", 剩余 waitReserveMoney=" + waitReserveMoney +
                 ", date=" + date +
-                '}';
+                "}";
     }
 }

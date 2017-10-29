@@ -1,6 +1,6 @@
 package com.atom.test;
 
-import com.atom.test.bean.ParamCard;
+import com.atom.test.bean.CardParam;
 import com.atom.test.bean.PlanDetail;
 import org.apache.commons.lang3.time.DateUtils;
 import org.junit.Before;
@@ -22,50 +22,54 @@ public class CardTest {
     private static final Logger logger = LoggerFactory.getLogger(CardTest.class);
 
     /**
-     * 手续费利息
+     * 服务费率
      */
-    private static final BigDecimal INTEREST = new BigDecimal(0.0085);
+    private static final BigDecimal SERVICE_FEE_RATE = new BigDecimal(0.0085);
     /**
-     * 占比
+     * 实际还款费率
      */
-    private static final BigDecimal ACTUAL_RATE = new BigDecimal(0.9915);
+    private static final BigDecimal ACTUAL_REFUND_RATE = new BigDecimal(0.9915);
     /**
-     * 手续费利息
+     * 代理费
      */
-    private static final BigDecimal PROXY_PAY = new BigDecimal(0.5);
-    /**
-     * 代付费 边界值
-     */
-    private BigDecimal border = new BigDecimal(0.10);
+    private static final BigDecimal PROXY_FEE = new BigDecimal(0.5);
 
-    private static final BigDecimal TEN = new BigDecimal(10);
+    /**
+     * 代付费界限值 低于10%收取代付费
+     */
+    private BigDecimal PROXY_BOUND = new BigDecimal(0.10);
 
-    public static final String DATE_PATTERN = "yyyy-MM-dd";
+    private static final String DATE_PATTERN = "yyyy-MM-dd";
 
     private DateFormat df = new SimpleDateFormat(DATE_PATTERN);
 
-    List<ParamCard> paramCards = new ArrayList<>();
-
+    /**
+     * 参数 用户传入每张卡信息
+     */
+    private List<CardParam> paramCards = new ArrayList<>();
+    /**
+     * 参数 还款基数
+     */
     private BigDecimal refundBase = new BigDecimal(1000);
 
     @Before
     public void init() throws ParseException {
 
-        ParamCard paramCard1 = new ParamCard();
+        CardParam paramCard1 = new CardParam();
         paramCard1.setCardNum("11111");
         paramCard1.setRefundAmount(new BigDecimal(10000));
         paramCard1.setRefundBase(refundBase);
         paramCard1.setPayStartDate(DateUtils.parseDate("2017-11-01", DATE_PATTERN));
         paramCard1.setPayEndDate(DateUtils.parseDate("2017-11-08", DATE_PATTERN));
 
-        ParamCard paramCard2 = new ParamCard();
+        CardParam paramCard2 = new CardParam();
         paramCard2.setCardNum("22222");
         paramCard2.setRefundAmount(new BigDecimal(5000));
         paramCard2.setRefundBase(refundBase);
         paramCard2.setPayStartDate(DateUtils.parseDate("2017-11-01", DATE_PATTERN));
         paramCard2.setPayEndDate(DateUtils.parseDate("2017-11-11", DATE_PATTERN));
 
-        ParamCard paramCard3 = new ParamCard();
+        CardParam paramCard3 = new CardParam();
         paramCard3.setCardNum("33333");
         paramCard3.setRefundAmount(new BigDecimal(20000));
         paramCard3.setRefundBase(refundBase);
@@ -80,58 +84,57 @@ public class CardTest {
     @Test
     public void clientTest() {
 
-        Map<String, BigDecimal> map = new HashMap<>();
+        //计算所有卡还款开始至结束日期
+        Date startDate = paramCards.stream().min(Comparator.comparing(CardParam::getPayStartDate)).map(CardParam::getPayStartDate).get();
+        Date endDate = paramCards.stream().max(Comparator.comparing(CardParam::getPayEndDate)).map(CardParam::getPayEndDate).get();
 
-        //递归 模版方法 templateTest
-        Date startDate = paramCards.stream().min(Comparator.comparing(ParamCard::getPayStartDate)).map(ParamCard::getPayStartDate).get();
-        Date endDate = paramCards.stream().max(Comparator.comparing(ParamCard::getPayEndDate)).map(ParamCard::getPayEndDate).get();
-
-        BigDecimal total = BigDecimal.ZERO;
-        for (ParamCard paramCard : paramCards) {
-            total = total.add(paramCard.getRefundAmount().multiply(INTEREST).setScale(2, BigDecimal.ROUND_HALF_UP));
-            if (paramCard.getRefundRate().compareTo(border) <= 0) {
-                BigDecimal proxyCost = (paramCard.getRefundAmount().divide(paramCard.getRefundBase()).subtract(TEN)).multiply(PROXY_PAY);
-                total = total.add(proxyCost);
+        //计算需要支付的所有费用
+        BigDecimal totalFee = BigDecimal.ZERO;
+        for (CardParam paramCard : paramCards) {
+            totalFee = totalFee.add(paramCard.getRefundAmount().multiply(SERVICE_FEE_RATE).setScale(2, BigDecimal.ROUND_HALF_UP));
+            if (paramCard.getRefundRate().compareTo(PROXY_BOUND) <= 0) {
+                BigDecimal proxyCost = (paramCard.getRefundAmount().divide(paramCard.getRefundBase()).subtract(BigDecimal.TEN)).multiply(PROXY_FEE);
+                totalFee = totalFee.add(proxyCost);
             }
         }
-        total = total.add(refundBase);
+        totalFee = totalFee.add(refundBase);
 
-        logger.info("预计总还款额:{}\n", total);
+        logger.info("预计总还款额:{}\n", totalFee);
 
         Date vernier = startDate;
         //公式计数器
         int totalCount = 0;
         int count = 0;
         List<PlanDetail> planDetails = new ArrayList<>();
-        PlanDetail snapshot = new PlanDetail();
-        snapshot.setDeposit(total);
+        //上次支付
         Map<String, BigDecimal> numDepositMap = new HashMap<>();
+        //记录上次待支付
         Map<String, BigDecimal> waitReserveMap = new HashMap<>();
+        //按天数遍历计算
         while (vernier.getTime() <= endDate.getTime()) {
-            int circleCount = 1;
-            List<ParamCard> filterParamCards = filterByDate(paramCards, vernier).stream().sorted(Comparator.comparing(ParamCard::getRefundAmount).reversed()).collect(toList());
-            Integer maxPreCount = filterParamCards.stream().max(Comparator.comparing(ParamCard::getPreCount)).map(ParamCard::getPreCount).get().intValue();
-            List<ParamCard> remainderList = filterParamCards.stream().filter(paramCard -> paramCard.getRemainder() != 0).collect(toList());
-            //最大余数
+            int refundCount = 1;
+            List<CardParam> filterParamCards = filterByDate(paramCards, vernier).stream().sorted(Comparator.comparing(CardParam::getRefundAmount).reversed()).collect(toList());
+            Integer maxPreCount = filterParamCards.stream().max(Comparator.comparing(CardParam::getPreCount)).map(CardParam::getPreCount).get().intValue();
+            List<CardParam> remainderList = filterParamCards.stream().filter(paramCard -> paramCard.getRemainder() != 0).collect(toList());
+            //每一天最多还款次数
             Integer maxRemainder = maxPreCount;
             if (!CollectionUtils.isEmpty(remainderList) && count < maxRemainder) {
                 maxRemainder += 1;
             }
             logger.info("------- day vernier:{} -------", df.format(vernier));
-            while (circleCount <= maxRemainder) {
-                for (ParamCard paramCard : filterParamCards) {
+            while (refundCount <= maxRemainder) {
+                for (CardParam paramCard : filterParamCards) {
                     //整除
-                    Boolean pre = paramCard.getRemainder() == 0 && circleCount > paramCard.getPreCount().intValue();
+                    Boolean pre = paramCard.getRemainder() == 0 && refundCount > paramCard.getPreCount().intValue();
                     //非整除
-                    Boolean remainder = paramCard.getRemainder() > 0 && circleCount > paramCard.getPreCount().intValue() + 1;
+                    Boolean remainder = paramCard.getRemainder() > 0 && refundCount > paramCard.getPreCount().intValue() + 1;
                     if (pre || remainder) {
                         continue;
                     }
                     PlanDetail planDetail = new PlanDetail();
                     planDetail.setCardNum(paramCard.getCardNum());
                     planDetail.setPlanNum(count + "");
-                    BigDecimal deposit = snapshot.getDeposit().multiply(ACTUAL_RATE.pow(totalCount)).setScale(2, BigDecimal.ROUND_HALF_UP);
-                    BigDecimal deposit2 = total.multiply(ACTUAL_RATE.pow(totalCount)).setScale(2, BigDecimal.ROUND_HALF_UP);
+                    BigDecimal deposit2 = totalFee.multiply(ACTUAL_REFUND_RATE.pow(totalCount)).setScale(2, BigDecimal.ROUND_HALF_UP);
                     BigDecimal tmp = null == numDepositMap.get(paramCard.getCardNum()) ? BigDecimal.ZERO : numDepositMap.get(paramCard.getCardNum());
                     BigDecimal thisDeposit = tmp.add(deposit2);
 
@@ -148,12 +151,11 @@ public class CardTest {
                         waitReserveMap.put(paramCard.getCardNum(), planDetail.getWaitReserveMoney());
                     }
                     planDetail.setDate(vernier);
-                    snapshot = planDetail;
                     totalCount++;
                     logger.info("planDetail:{}", planDetail);
                     planDetails.add(planDetail);
                 }
-                circleCount++;
+                refundCount++;
             }
 
             vernier = DateUtils.addDays(vernier, 1);
@@ -162,20 +164,19 @@ public class CardTest {
 
 
         logger.info("********** result **********\n");
-//        planDetails.forEach(planDetail -> {
-//            logger.info("info:{}", planDetails);
-//        });
+        planDetails.forEach(planDetail -> {
+            logger.info("info:{}", planDetail);
+        });
     }
 
-    private List<ParamCard> filterByDate(List<ParamCard> filterParamCards, Date vernier) {
-        List<ParamCard> list = new ArrayList<>();
-        for (ParamCard paramCard : filterParamCards) {
+    private List<CardParam> filterByDate(List<CardParam> filterParamCards, Date vernier) {
+        List<CardParam> list = new ArrayList<>();
+        for (CardParam paramCard : filterParamCards) {
             if (vernier.getTime() >= paramCard.getPayStartDate().getTime() && vernier.getTime() <= paramCard.getPayEndDate().getTime()) {
                 list.add(paramCard);
             }
         }
         return list;
     }
-
 
 }

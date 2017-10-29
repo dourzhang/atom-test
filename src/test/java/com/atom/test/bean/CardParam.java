@@ -9,12 +9,11 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
+/**
+ * 卡参数
+ */
 @Data
-public class ParamCard {
-
-    private BigDecimal bound = new BigDecimal(0.1).setScale(2, BigDecimal.ROUND_HALF_UP);
-
-    private BigDecimal proxyRate = new BigDecimal(0.05).setScale(3, BigDecimal.ROUND_HALF_UP);
+public class CardParam {
 
     private Long id;
     /**
@@ -44,22 +43,22 @@ public class ParamCard {
     /**
      * 预判次数
      */
-    private BigDecimal preCount;
+//    private BigDecimal preCount;
     /**
      * 余数
      */
-    private Integer remainder;
+//    private Integer remainder;
     /**
      * 预判计数器
      */
-    private Integer preCounter = 0;
+//    private Integer preCounter = 0;
     /**
      * 余数计数器
      */
-    private Integer remainderCounter = 0;
+//    private Integer remainderCounter = 0;
 
     public BigDecimal getRefundRate() {
-        return refundAmount.divide(refundBase);
+        return refundAmount.divide(refundBase, 2, BigDecimal.ROUND_HALF_UP);
     }
 
     public BigDecimal getPreCount() {
@@ -122,7 +121,6 @@ public class ParamCard {
         Integer diff = Integer.parseInt(String.valueOf(betweenDays));
         return new BigDecimal(diff);
     }
-
 
     @Override
     public String toString() {
