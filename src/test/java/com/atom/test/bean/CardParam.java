@@ -40,6 +40,10 @@ public class CardParam {
      * 还比率
      */
     private BigDecimal refundRate;
+    /**
+     * 余额
+     */
+    private BigDecimal balance;
 
     public BigDecimal getRefundRate() {
         return refundAmount.divide(refundBase, 2, BigDecimal.ROUND_HALF_UP);
