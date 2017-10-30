@@ -129,7 +129,7 @@ public class CardTest {
             List<CardParam> remainderList = filterParamCards.stream().filter(paramCard -> paramCard.getRemainder() != 0).collect(toList());
             //每一天最多还款次数
             Integer maxRemainder = maxPreCount;
-            if (!CollectionUtils.isEmpty(remainderList) && count < maxRemainder) {
+            if (!CollectionUtils.isEmpty(remainderList) && refundCount <= (maxRemainder + 1)) {
                 maxRemainder += 1;
             }
             logger.info("------- day vernier:{} -------", df.format(vernier));
@@ -172,20 +172,23 @@ public class CardTest {
                         waitReserveMap.put(paramCard.getCardNum(), BigDecimal.ZERO);
                         paramCard.setBalance(totalFee.subtract(waitReserve.multiply(new BigDecimal(1.0085)).setScale(2, BigDecimal.ROUND_HALF_UP)));
 
-                        //回款
-                        planDetailExtra = new PlanDetail();
-                        BigDecimal depositExtra = waitReserve.multiply(ACTUAL_REFUND_RATE).setScale(2, BigDecimal.ROUND_HALF_UP);
-                        planDetailExtra.setDeposit(depositExtra);
-                        planDetailExtra.setCardNum(snapshotPlanDetail.getCardNum());
-                        planDetailExtra.setPlanNum(count + "");
-                        planDetailExtra.setOutputCadNum(planDetail.getCardNum());
-                        planDetailExtra.setOutPutMoney(waitReserve);
-                        planDetailExtra.setReserveFee(depositExtra.multiply(SERVICE_FEE_RATE).setScale(2, BigDecimal.ROUND_HALF_UP));
-                        planDetailExtra.setWaitReserveMoney(snapshotPlanDetail.getWaitReserveMoney());
-                        planDetailExtra.setRollMoney(planDetail.getRollMoney().subtract(planDetail.getReserveFee()));
-                        planDetails.add(planDetailExtra);
+                        if (!planDetail.getCardNum().equals(snapshotPlanDetail.getCardNum())) {
+                            //回款
+                            planDetailExtra = new PlanDetail();
+                            BigDecimal depositExtra = waitReserve.multiply(ACTUAL_REFUND_RATE).setScale(2, BigDecimal.ROUND_HALF_UP);
+                            planDetailExtra.setDeposit(depositExtra);
+                            planDetailExtra.setCardNum(snapshotPlanDetail.getCardNum());
+                            planDetailExtra.setPlanNum(count + "");
+                            planDetailExtra.setOutputCadNum(planDetail.getCardNum());
+                            planDetailExtra.setOutPutMoney(waitReserve);
+                            planDetailExtra.setReserveFee(depositExtra.multiply(SERVICE_FEE_RATE).setScale(2, BigDecimal.ROUND_HALF_UP));
+                            planDetailExtra.setWaitReserveMoney(snapshotPlanDetail.getWaitReserveMoney());
+                            planDetailExtra.setRollMoney(planDetail.getRollMoney().subtract(planDetail.getReserveFee()));
+                            planDetails.add(planDetailExtra);
 
-                        snapshotPlanDetail = planDetailExtra;
+                            snapshotPlanDetail = planDetailExtra;
+                        }
+
 //                        reduceServiceFee = waitReserve.multiply(SERVICE_FEE_RATE).setScale(2, BigDecimal.ROUND_HALF_UP);
 //                        totalFee = totalFee.subtract(reduceServiceFee);
                     } else {
