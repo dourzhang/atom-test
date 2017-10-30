@@ -44,7 +44,7 @@ public class PlanDetail {
 
     private BigDecimal rollMoney;
 
-    private BigDecimal outPutMoney;
+//    private BigDecimal outPutMoney;
 
     @Override
     public String toString() {
@@ -55,7 +55,7 @@ public class PlanDetail {
                 .append(" planNum=").append(planNum).append(",")
                 .append(outputCadNum).append("->").append(cardNum).append(",")
                 .append(" rollMoney : ").append(rollMoney).append(",")
-                .append(" outPutMoney : ").append(outPutMoney).append(",")
+//                .append(" outPutMoney : ").append(outPutMoney).append(",")
                 .append(" 还款 deposit : ").append(deposit).append(",")
                 .append(" 手续费 reserveFee : ").append(reserveFee).append(",")
                 .append("剩余 waitReserveMoney:").append(waitReserveMoney)
