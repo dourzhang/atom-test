@@ -46,12 +46,12 @@ public class CardParam {
 //    private BigDecimal balance;
 
     public BigDecimal getRefundRate() {
-        return refundAmount.divide(refundBase, 2, BigDecimal.ROUND_HALF_UP);
+        return refundAmount.divide(refundBase, 2, BigDecimal.ROUND_UP);
     }
 
     public BigDecimal getPreCount() {
         //预判次数
-        BigDecimal count = refundAmount.divide(refundBase, BigDecimal.ROUND_HALF_UP);
+        BigDecimal count = refundAmount.divide(refundBase, BigDecimal.ROUND_UP);
         BigDecimal dayDiff = null;
         try {
             dayDiff = daysBetween(payStartDate, payEndDate);
@@ -68,7 +68,7 @@ public class CardParam {
     public Integer getRemainder() {
 
         //预判次数
-        BigDecimal count = refundAmount.divide(refundBase, BigDecimal.ROUND_HALF_UP);
+        BigDecimal count = refundAmount.divide(refundBase, BigDecimal.ROUND_UP);
         BigDecimal dayDiff = null;
         try {
             dayDiff = daysBetween(payStartDate, payEndDate);
