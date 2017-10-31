@@ -121,7 +121,7 @@ public class CardTest {
         snapshotPlanDetail.setCardNum("init");
         snapshotPlanDetail.setOutputCadNum("00000");
         snapshotPlanDetail.setRollMoney(initRollMoney);
-
+        snapshotPlanDetail.setReserveFee(BigDecimal.ZERO);
         //按天数遍历计算
         while (vernier.getTime() <= endDate.getTime()) {
             int refundCount = 1;
@@ -130,7 +130,7 @@ public class CardTest {
             List<CardParam> remainderList = filterParamCards.stream().filter(paramCard -> paramCard.getRemainder() != 0).collect(toList());
             //每一天最多还款次数
             Integer maxRemainder = maxPreCount;
-            if (!CollectionUtils.isEmpty(remainderList) && refundCount <= (maxRemainder + 1)) {
+            if (!CollectionUtils.isEmpty(remainderList) && count <= (maxPreCount + 1)) {
                 maxRemainder += 1;
             }
             logger.info("------- day vernier:{} -------", df.format(vernier));
