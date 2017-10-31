@@ -213,9 +213,11 @@ public class CardTest {
 
 
         logger.info("********** result **********\n");
-//        planDetails.forEach(planDetail -> {
-//            logger.info("info:{}", planDetail);
-//        });
+        BigDecimal totalServiceFee = new BigDecimal(0);
+        for (PlanDetail planDetail : planDetails) {
+            totalServiceFee = totalServiceFee.add(planDetail.getReserveFee());
+        }
+        logger.info("totalServiceFee:{}", totalServiceFee);
     }
 
     private List<CardParam> filterByDate(List<CardParam> filterParamCards, Date vernier) {
