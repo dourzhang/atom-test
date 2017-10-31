@@ -32,7 +32,7 @@ public class CardTest {
     /**
      * 代理费
      */
-    private static final BigDecimal PROXY_FEE = new BigDecimal(0.5);
+    private static final BigDecimal PROXY_FEE = BigDecimal.ONE;
 
     /**
      * 代付费界限值 低于10%收取代付费
@@ -92,9 +92,9 @@ public class CardTest {
         BigDecimal initRollMoney = BigDecimal.ZERO;
         for (CardParam paramCard : paramCards) {
             initRollMoney = initRollMoney.add(paramCard.getRefundAmount().multiply(SERVICE_FEE_RATE).setScale(2, BigDecimal.ROUND_DOWN));
-            if (paramCard.getRefundRate().compareTo(PROXY_BOUND) <= 0) {
-                BigDecimal proxyCost = (paramCard.getRefundAmount().divide(paramCard.getRefundBase()).subtract(BigDecimal.TEN)).multiply(PROXY_FEE);
-                initRollMoney = initRollMoney.add(proxyCost);
+            if (paramCard.getPreCount().compareTo(BigDecimal.TEN) > 0) {
+                BigDecimal count = paramCard.getPreCount().subtract(BigDecimal.TEN);
+                initRollMoney = initRollMoney.add(count.multiply(PROXY_FEE));
             }
         }
         initRollMoney = initRollMoney.add(refundBase);
@@ -104,7 +104,9 @@ public class CardTest {
         Date vernier = startDate;
         //公式计数器
         int totalCount = 0;
+        //plan count
         int count = 0;
+
         List<PlanDetail> planDetails = new ArrayList<>();
         //上次支付
         Map<String, BigDecimal> numDepositMap = new HashMap<>();
@@ -126,20 +128,20 @@ public class CardTest {
         while (vernier.getTime() <= endDate.getTime()) {
             int refundCount = 1;
             List<CardParam> filterParamCards = filterByDate(paramCards, vernier).stream().sorted(Comparator.comparing(CardParam::getRefundAmount).reversed()).collect(toList());
-            Integer maxPreCount = filterParamCards.stream().max(Comparator.comparing(CardParam::getPreCount)).map(CardParam::getPreCount).get().intValue();
+            Integer maxPreCount = filterParamCards.stream().max(Comparator.comparing(CardParam::getAvePreCount)).map(CardParam::getAvePreCount).get().intValue();
             List<CardParam> remainderList = filterParamCards.stream().filter(paramCard -> paramCard.getRemainder() != 0).collect(toList());
             //每一天最多还款次数
             Integer maxRemainder = maxPreCount;
-            if (!CollectionUtils.isEmpty(remainderList) && count <= (maxPreCount + 1)) {
+            if (!CollectionUtils.isEmpty(remainderList) && refundCount <= (maxPreCount + 1)) {
                 maxRemainder += 1;
             }
             logger.info("------- day vernier:{} -------", df.format(vernier));
             while (refundCount <= maxRemainder) {
                 for (CardParam paramCard : filterParamCards) {
                     //整除
-                    Boolean pre = paramCard.getRemainder() == 0 && refundCount > paramCard.getPreCount().intValue();
+                    Boolean pre = paramCard.getRemainder() == 0 && refundCount > paramCard.getAvePreCount().intValue();
                     //非整除
-                    Boolean remainder = paramCard.getRemainder() > 0 && refundCount > paramCard.getPreCount().intValue() + 1;
+                    Boolean remainder = paramCard.getRemainder() > 0 && refundCount > paramCard.getAvePreCount().intValue() + 1;
                     if (pre || remainder) {
                         continue;
                     }
@@ -153,7 +155,7 @@ public class CardTest {
 //                    BigDecimal deposit2 = totalFee.multiply(ACTUAL_REFUND_RATE.pow(totalCount)).subtract(reduceServiceFee).setScale(2, BigDecimal.ROUND_DOWN);
                     BigDecimal rollMoney = snapshotPlanDetail.getRollMoney().subtract(snapshotPlanDetail.getReserveFee());
                     BigDecimal preDeposit = null == numDepositMap.get(paramCard.getCardNum()) ? BigDecimal.ZERO : numDepositMap.get(paramCard.getCardNum());
-                    BigDecimal thisDeposit = preDeposit.add(rollMoney);
+                    BigDecimal thisDeposit = preDeposit.add(rollMoney.multiply(ACTUAL_REFUND_RATE).setScale(2, BigDecimal.ROUND_UP));
 
                     BigDecimal waitReserve = null == waitReserveMap.get(paramCard.getCardNum()) ? paramCard.getRefundAmount() : waitReserveMap.get(paramCard.getCardNum());
                     if (waitReserve.compareTo(BigDecimal.ZERO) == 0) {
@@ -173,7 +175,7 @@ public class CardTest {
                             //回款
                             planDetailExtra = new PlanDetail();
                             BigDecimal depositExtra = waitReserve.multiply(ACTUAL_REFUND_RATE).setScale(2, BigDecimal.ROUND_DOWN);
-                            planDetailExtra.setDeposit(depositExtra);
+                            planDetailExtra.setDeposit(depositExtra.multiply(ACTUAL_REFUND_RATE).setScale(2, BigDecimal.ROUND_UP));
                             planDetailExtra.setCardNum(snapshotPlanDetail.getCardNum());
                             planDetailExtra.setPlanNum(count + "");
                             planDetailExtra.setOutputCadNum(planDetail.getCardNum());
@@ -185,7 +187,7 @@ public class CardTest {
                             snapshotPlanDetail = planDetailExtra;
                         }
                     } else {
-                        planDetail.setDeposit(rollMoney);
+                        planDetail.setDeposit(rollMoney.multiply(ACTUAL_REFUND_RATE).setScale(2, BigDecimal.ROUND_UP));
                         planDetail.setWaitReserveMoney(paramCard.getRefundAmount().subtract(thisDeposit));
                         planDetail.setReserveFee(planDetail.getDeposit().multiply(SERVICE_FEE_RATE).setScale(2, BigDecimal.ROUND_DOWN));
                         planDetail.setRollMoney(snapshotPlanDetail.getRollMoney().subtract(snapshotPlanDetail.getReserveFee()));

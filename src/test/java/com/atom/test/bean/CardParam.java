@@ -40,16 +40,20 @@ public class CardParam {
      * 还比率
      */
     private BigDecimal refundRate;
+
     /**
-     * 余额
+     * 余额getRefundBase
      */
 //    private BigDecimal balance;
-
-    public BigDecimal getRefundRate() {
-        return refundAmount.divide(refundBase, 2, BigDecimal.ROUND_DOWN);
+//    public BigDecimal getRefundRate() {
+//        return refundBase.divide(refundAmount, 2, BigDecimal.ROUND_DOWN).multiply(new BigDecimal(0.01)).setScale(2, BigDecimal.ROUND_DOWN);
+//    }
+    public BigDecimal getPreCount() {
+        //预判次数
+        return refundAmount.divide(refundBase, BigDecimal.ROUND_UP);
     }
 
-    public BigDecimal getPreCount() {
+    public BigDecimal getAvePreCount() {
         //预判次数
         BigDecimal count = refundAmount.divide(refundBase, BigDecimal.ROUND_DOWN);
         BigDecimal dayDiff = null;
@@ -121,7 +125,7 @@ public class CardParam {
                 ", payEndDate=" + payEndDate +
                 ", refundBase=" + refundBase +
                 ", refundBase=" + refundBase +
-                ", preCount=" + getPreCount() +
+                ", preCount=" + getAvePreCount() +
                 ", remainder=" + getRemainder() +
                 '}';
     }
