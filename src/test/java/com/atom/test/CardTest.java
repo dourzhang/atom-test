@@ -186,11 +186,11 @@ public class CardTest {
                             //回款
                             planDetailExtra = new PlanDetail();
                             BigDecimal depositExtra = waitReserve.multiply(ACTUAL_REFUND_RATE).setScale(2, BigDecimal.ROUND_DOWN);
-                            planDetailExtra.setDeposit(waitReserve);
+                            planDetailExtra.setDeposit(depositExtra.multiply(ACTUAL_REFUND_RATE).setScale(2, BigDecimal.ROUND_UP));
                             planDetailExtra.setCardNum(snapshotPlanDetail.getCardNum());
                             planDetailExtra.setPlanNum(count + "");
                             planDetailExtra.setOutputCadNum(planDetail.getCardNum());
-                            planDetailExtra.setReserveFee(waitReserve.divide(ACTUAL_REFUND_RATE, BigDecimal.ROUND_DOWN).multiply(SERVICE_FEE_RATE).setScale(2, BigDecimal.ROUND_DOWN));
+                            planDetailExtra.setReserveFee(depositExtra.multiply(SERVICE_FEE_RATE).setScale(2, BigDecimal.ROUND_DOWN));
                             planDetailExtra.setWaitReserveMoney(snapshotPlanDetail.getWaitReserveMoney());
                             planDetailExtra.setRollMoney(planDetail.getRollMoney().subtract(planDetail.getReserveFee()));
                             planDetails.add(planDetailExtra);
