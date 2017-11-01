@@ -2,7 +2,6 @@ package com.atom.test;
 
 import com.atom.test.bean.CardParam;
 import com.atom.test.bean.PlanDetail;
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.apache.commons.lang3.time.DateUtils;
 import org.junit.Before;
 import org.junit.Test;
