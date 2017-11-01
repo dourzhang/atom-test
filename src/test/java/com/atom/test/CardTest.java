@@ -186,11 +186,11 @@ public class CardTest {
                             //回款
                             planDetailExtra = new PlanDetail();
                             BigDecimal depositExtra = waitReserve.multiply(ACTUAL_REFUND_RATE).setScale(2, BigDecimal.ROUND_DOWN);
-                            planDetailExtra.setDeposit(depositExtra.multiply(ACTUAL_REFUND_RATE).setScale(2, BigDecimal.ROUND_UP));
+                            planDetailExtra.setDeposit(waitReserve);
                             planDetailExtra.setCardNum(snapshotPlanDetail.getCardNum());
                             planDetailExtra.setPlanNum(count + "");
                             planDetailExtra.setOutputCadNum(planDetail.getCardNum());
-                            planDetailExtra.setReserveFee(depositExtra.multiply(SERVICE_FEE_RATE).setScale(2, BigDecimal.ROUND_DOWN));
+                            planDetailExtra.setReserveFee(waitReserve.divide(ACTUAL_REFUND_RATE, BigDecimal.ROUND_DOWN).multiply(SERVICE_FEE_RATE).setScale(2, BigDecimal.ROUND_DOWN));
                             planDetailExtra.setWaitReserveMoney(snapshotPlanDetail.getWaitReserveMoney());
                             planDetailExtra.setRollMoney(planDetail.getRollMoney().subtract(planDetail.getReserveFee()));
                             planDetails.add(planDetailExtra);
@@ -210,10 +210,10 @@ public class CardTest {
                     planDetail.setDate(vernier);
                     totalCount++;
 
-                    logger.info("planDetail:{}", planDetail);
+                    logger.info("planDetailA: {}", planDetail);
                     if (null != planDetailExtra) {
 //                        logger.info("reduceServiceFee:{}", reduceServiceFee);
-                        logger.info("planDetail:{}", planDetailExtra);
+                        logger.info("planDetailB: {}", planDetailExtra);
                     }
                     planDetails.add(planDetail);
 //                    Integer depositCount = depositCountMap.get(paramCard.getCardNum());
