@@ -174,11 +174,13 @@ public class CardTest {
                     }
                     PlanDetail planDetailExtra = null;
                     if (initRollMoney.compareTo(waitReserve) > 0) {
+                        BigDecimal realDeposit = waitReserve.divide(ACTUAL_REFUND_RATE, 2, BigDecimal.ROUND_DOWN);
                         planDetail.setDeposit(waitReserve);
                         planDetail.setWaitReserveMoney(BigDecimal.ZERO);
-                        BigDecimal reserveFee = waitReserve.multiply(SERVICE_FEE_RATE).setScale(2, BigDecimal.ROUND_DOWN);
+                        BigDecimal reserveFee = realDeposit.multiply(SERVICE_FEE_RATE).setScale(2, BigDecimal.ROUND_DOWN);
                         planDetail.setReserveFee(reserveFee);
                         planDetail.setRollMoney(rollMoney);
+                        planDetail.setRealDeposit(realDeposit);
                         numDepositMap.put(paramCard.getCardNum(), waitReserve);
                         waitReserveMap.put(paramCard.getCardNum(), BigDecimal.ZERO);
 
@@ -186,13 +188,14 @@ public class CardTest {
                             //回款
                             planDetailExtra = new PlanDetail();
                             BigDecimal depositExtra = waitReserve.multiply(ACTUAL_REFUND_RATE).setScale(2, BigDecimal.ROUND_DOWN);
-                            planDetailExtra.setDeposit(depositExtra.multiply(ACTUAL_REFUND_RATE).setScale(2, BigDecimal.ROUND_UP));
+                            planDetailExtra.setDeposit(depositExtra);
                             planDetailExtra.setCardNum(snapshotPlanDetail.getCardNum());
                             planDetailExtra.setPlanNum(count + "");
                             planDetailExtra.setOutputCadNum(planDetail.getCardNum());
-                            planDetailExtra.setReserveFee(depositExtra.multiply(SERVICE_FEE_RATE).setScale(2, BigDecimal.ROUND_DOWN));
+                            planDetailExtra.setReserveFee(waitReserve.multiply(SERVICE_FEE_RATE).setScale(2, BigDecimal.ROUND_UP));
                             planDetailExtra.setWaitReserveMoney(snapshotPlanDetail.getWaitReserveMoney());
                             planDetailExtra.setRollMoney(planDetail.getRollMoney().subtract(planDetail.getReserveFee()));
+                            planDetailExtra.setRealDeposit(waitReserve);
                             planDetails.add(planDetailExtra);
 
                             snapshotPlanDetail = planDetailExtra;
@@ -202,6 +205,7 @@ public class CardTest {
                         planDetail.setWaitReserveMoney(paramCard.getRefundAmount().subtract(thisDeposit));
                         planDetail.setReserveFee(planDetail.getDeposit().multiply(SERVICE_FEE_RATE).setScale(2, BigDecimal.ROUND_DOWN));
                         planDetail.setRollMoney(snapshotPlanDetail.getRollMoney().subtract(snapshotPlanDetail.getReserveFee()));
+                        planDetail.setRealDeposit(rollMoney);
 
                         numDepositMap.put(paramCard.getCardNum(), thisDeposit);
                         waitReserveMap.put(paramCard.getCardNum(), planDetail.getWaitReserveMoney());

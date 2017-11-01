@@ -32,9 +32,11 @@ public class PlanDetail {
 
     private BigDecimal waitReserveMoney;   //待还款金额
 
-    private BigDecimal deposit;     //每次还款金额
+    private BigDecimal realDeposit;     //每次还款金额
 
-    private BigDecimal reserveFee;     //预交手续费
+    private BigDecimal reserveFee;     //预交手续费]
+
+    private BigDecimal deposit;     //每次还款金额
 
     private String status;//还款状态  已还款:Repayment 未还款:unRepayment
 
@@ -58,6 +60,7 @@ public class PlanDetail {
 //                .append(" outPutMoney : ").append(outPutMoney).append(",")
                 .append(" 还款 deposit : ").append(deposit).append(",")
                 .append(" 手续费 reserveFee : ").append(reserveFee).append(",")
+                .append(" 实际扣款 realDeposit : ").append(realDeposit).append(",")
                 .append("剩余 waitReserveMoney:").append(waitReserveMoney)
                 .append("}");
 
