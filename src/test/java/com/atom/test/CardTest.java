@@ -2,6 +2,7 @@ package com.atom.test;
 
 import com.atom.test.bean.CardParam;
 import com.atom.test.bean.PlanDetail;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.apache.commons.lang3.time.DateUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -87,7 +88,6 @@ public class CardTest {
         //计算所有卡还款开始至结束日期
         Date startDate = paramCards.stream().min(Comparator.comparing(CardParam::getPayStartDate)).map(CardParam::getPayStartDate).get();
         Date endDate = paramCards.stream().max(Comparator.comparing(CardParam::getPayEndDate)).map(CardParam::getPayEndDate).get();
-
         //计算需要支付的所有费用
         BigDecimal initRollMoney = BigDecimal.ZERO;
         for (CardParam paramCard : paramCards) {
@@ -112,7 +112,8 @@ public class CardTest {
         Map<String, BigDecimal> numDepositMap = new HashMap<>();
         //记录上次待支付
         Map<String, BigDecimal> waitReserveMap = new HashMap<>();
-
+        //还款天数
+        Map<String, Integer> dayCountMap = new HashMap<>();
         //每张卡上次计划
 //        Map<String, PlanDetail> cardSnapshotMap = new HashMap<>();
         //每张卡余额
@@ -127,7 +128,7 @@ public class CardTest {
         //按天数遍历计算
         while (vernier.getTime() <= endDate.getTime()) {
             int refundCount = 1;
-            List<CardParam> filterParamCards = filterByDate(paramCards, vernier).stream().sorted(Comparator.comparing(CardParam::getRefundAmount).reversed()).collect(toList());
+            List<CardParam> filterParamCards = filterByDate(paramCards, vernier, dayCountMap).stream().sorted(Comparator.comparing(CardParam::getRefundAmount).reversed()).collect(toList());
             Integer maxPreCount = filterParamCards.stream().max(Comparator.comparing(CardParam::getAvePreCount)).map(CardParam::getAvePreCount).get().intValue();
             List<CardParam> remainderList = filterParamCards.stream().filter(paramCard -> paramCard.getRemainder() != 0).collect(toList());
             //每一天最多还款次数
@@ -136,12 +137,23 @@ public class CardTest {
                 maxRemainder += 1;
             }
             logger.info("------- day vernier:{} -------", df.format(vernier));
+
+            for (CardParam paramCard : filterParamCards) {
+                Integer dayCount = dayCountMap.get(paramCard.getCardNum());
+                dayCountMap.put(paramCard.getCardNum(), null == dayCount ? 1 : dayCount + 1);
+                logger.info("卡号:{},还款天数:{}", paramCard.getCardNum(), null == dayCount ? 1 : dayCount + 1);
+            }
+
             while (refundCount <= maxRemainder) {
                 for (CardParam paramCard : filterParamCards) {
+                    Integer dayCount = dayCountMap.get(paramCard.getCardNum());
                     //整除
                     Boolean pre = paramCard.getRemainder() == 0 && refundCount > paramCard.getAvePreCount().intValue();
+
+                    Boolean day = paramCard.getRemainder() != 0 && dayCount > paramCard.getRemainder();
                     //非整除
-                    Boolean remainder = paramCard.getRemainder() > 0 && refundCount > paramCard.getAvePreCount().intValue() + 1;
+                    Boolean remainder = paramCard.getRemainder() > 0 && refundCount > (day ? paramCard.getAvePreCount().intValue() : paramCard.getAvePreCount().intValue() + 1);
+
                     if (pre || remainder) {
                         continue;
                     }
@@ -205,6 +217,8 @@ public class CardTest {
                         logger.info("planDetail:{}", planDetailExtra);
                     }
                     planDetails.add(planDetail);
+//                    Integer depositCount = depositCountMap.get(paramCard.getCardNum());
+//                    depositCountMap.put(paramCard.getCardNum(), null == depositCount ? 1 : depositCount + 1);
                 }
                 refundCount++;
             }
@@ -222,7 +236,7 @@ public class CardTest {
         logger.info("totalServiceFee:{}", totalServiceFee);
     }
 
-    private List<CardParam> filterByDate(List<CardParam> filterParamCards, Date vernier) {
+    private List<CardParam> filterByDate(List<CardParam> filterParamCards, Date vernier, Map<String, Integer> dayCountMap) {
         List<CardParam> list = new ArrayList<>();
         for (CardParam paramCard : filterParamCards) {
             if (vernier.getTime() >= paramCard.getPayStartDate().getTime() && vernier.getTime() <= paramCard.getPayEndDate().getTime()) {

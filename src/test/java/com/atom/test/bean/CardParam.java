@@ -81,7 +81,8 @@ public class CardParam {
         }
         //求余数
         if (count.compareTo(dayDiff) > 0) {
-            return (count.divideAndRemainder(dayDiff)[1]).intValue();
+            int remainder = (count.divideAndRemainder(dayDiff)[1]).intValue();
+            return remainder;
         }
         return 0;
     }
@@ -111,7 +112,7 @@ public class CardParam {
         long time2 = cal.getTimeInMillis();
         long betweenDays = (time2 - time1) / (1000 * 3600 * 24);
         Integer diff = Integer.parseInt(String.valueOf(betweenDays));
-        return new BigDecimal(diff);
+        return new BigDecimal(diff + 1);
     }
 
     @Override
