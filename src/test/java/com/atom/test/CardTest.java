@@ -203,7 +203,7 @@ public class CardTest {
                     } else {
                         planDetail.setDeposit(rollMoney.multiply(ACTUAL_REFUND_RATE).setScale(2, BigDecimal.ROUND_UP));
                         planDetail.setWaitReserveMoney(paramCard.getRefundAmount().subtract(thisDeposit));
-                        planDetail.setReserveFee(planDetail.getDeposit().multiply(SERVICE_FEE_RATE).setScale(2, BigDecimal.ROUND_DOWN));
+                        planDetail.setReserveFee(rollMoney.multiply(SERVICE_FEE_RATE).setScale(2, BigDecimal.ROUND_DOWN));
                         planDetail.setRollMoney(snapshotPlanDetail.getRollMoney().subtract(snapshotPlanDetail.getReserveFee()));
                         planDetail.setRealDeposit(rollMoney);
 
